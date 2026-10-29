@@ -51,6 +51,25 @@ test("长文压缩学习区，详细模式才重复全文；自定义规则不�
   assert.equal("temperature" in request.body, false);
 });
 
+test("英文学习说明只切换解释语种，兼容旧提示词并保留翻译路由", () => {
+  const english = buildPrompt("Check this text.", "en_US", "zh_CN", "en_US", {
+    learningLanguage: "en", systemPrompt: "学习区用中文解释。",
+  });
+  assert.match(english, /英文原文只输出中文和俄文/);
+  assert.match(english, /Study notes:/);
+  assert.match(english, /Russian reading:/);
+  assert.match(english, /学习说明语言为英语（English）/);
+  assert.match(english, /覆盖自定义提示词中关于解释语种的要求/);
+  assert.match(english, /不要逐句同时附上另一种解释语言/);
+  assert.match(buildPrompt("Text.", "en", "ru", "en"), /学习说明语言为中文/);
+  const detailed = buildPrompt("x".repeat(401), "en", "ru", "en", {mode:"detailed",learningLanguage:"en"});
+  assert.match(detailed, /Study notes:/);
+  assert.doesNotMatch(detailed, /作中文解析/);
+  for (const [mode, target] of [["target", "ru"], ["study", "es_ES"]]) {
+    assert.doesNotMatch(buildPrompt("Text.", "en", target, "en", {mode, learningLanguage:"en"}), /Study notes:|Russian reading:|学习说明语言为/);
+  }
+});
+
 test("请求构造兼容四家协议且不把密钥放入URL", () => {
   for (const provider of ["gemini", "openai", "deepseek", "qwen"]) {
     const r = makeRequest("text", "en", "ru", {config:{...config,provider}});
@@ -93,10 +112,19 @@ test("最终译文去除俄文重音，学习区和其他语言重音保留", ()
   assert.equal(cleanTranslationStress("学习：\nте́кст ещё́ молоко́"), "学习：\nтекст ещё молоко́");
 });
 
+test("英文学习区保留多音节重音，纯翻译不把原文标题误当学习分区", () => {
+  const sample = "Русский:\nМолоко́.\nStudy notes:\nмолоко́ те́кст ещё́ café";
+  assert.equal(cleanTranslationStress(sample), "Русский:\nМолоко.\nStudy notes:\nмолоко́ текст ещё café");
+  assert.equal(cleanTranslationStress(sample, false), "Русский:\nМолоко.\nStudy notes:\nмолоко текст ещё café");
+});
+
 test("真实入口支持JSON回退、空输入、错误隐私隔离", async () => {
   assert.equal(await translate(" ", "auto", "ru", {}), "");
   const options = {config,utils:{fetch:async () => Response.json({choices:[{message:{content:"Молоко́"},finish_reason:"stop"}]})}};
   assert.equal(await translate("milk", "en", "ru", options), "Молоко");
+  const headingResponse = {...options, utils:{fetch:async () => Response.json({choices:[{message:{content:"Study notes:\nмолоко́"},finish_reason:"stop"}]})}};
+  assert.equal(await translate("sample", "en", "ru", {...headingResponse,config:{...config,mode:"target"}}), "Study notes:\nмолоко");
+  assert.equal(await translate("sample", "en", "es", headingResponse), "Study notes:\nмолоко");
   for (const fetch of [async () => new Response("test-secret",{status:401}), async () => {throw new Error("test-secret");}]) {
     await assert.rejects(translate("milk", "en", "ru", {...options,utils:{fetch}}), (error) => !error.message.includes("test-secret"));
   }

@@ -7,7 +7,7 @@ root = Path(__file__).resolve().parents[1]
 manifest = json.loads((root / 'manggo.plugin.json').read_text())
 output = root / 'dist' / f"manggo-plugin-trilingual-{manifest['version']}.mplugin"
 output.parent.mkdir(exist_ok=True)
-files = ['manggo.plugin.json', 'main.js', 'prompts.js', 'README.md', 'VALIDATION.md', 'LICENSE']
+files = ['manggo.plugin.json', 'main.js', 'prompts.js', 'README.md', 'README.en.md', 'VALIDATION.md', 'VALIDATION.en.md', 'LICENSE']
 with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as archive:
     for name in files:
         info = zipfile.ZipInfo(name, (2026, 1, 1, 0, 0, 0))

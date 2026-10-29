@@ -1,0 +1,42 @@
+name: 问题反馈 / Bug report
+description: 使用虚构例句复现问题，不要提交密钥或个人配置。Use an invented example; never share keys or personal exports.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请勿上传 API key、Authorization 请求头、个人配置 ZIP/数据库或私人原文。
+        Do not upload API keys, Authorization headers, personal configuration ZIPs/databases, or private source text.
+  - type: input
+    id: versions
+    attributes:
+      label: 环境 / Versions
+      placeholder: Manggo version, plugin version, operating system
+    validations:
+      required: true
+  - type: input
+    id: provider
+    attributes:
+      label: 服务商与模型 / Provider and model
+      description: 只写名称，不写密钥。Names only; no API key.
+    validations:
+      required: true
+  - type: input
+    id: settings
+    attributes:
+      label: 输出模式、学习语言、目标语言 / Mode, notes language and target
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: 虚构复现例句 / Invented reproduction text
+      description: 使用不含私人信息的最小例子。Use a minimal example without private information.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: 实际结果与预期 / Actual and expected result
+      description: 报错只贴已脱敏的内容；不要附个人配置。Redact errors; do not attach personal configuration files.
+    validations:
+      required: true
